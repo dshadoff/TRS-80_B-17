@@ -21,10 +21,10 @@ software.
 The B-17 software was released, which reportedly improved cassette I/O speeds to 1700
 baud - an over 3-fold improvement over base Model I speeds.
 
-When the Model 3 was released, it had tape speeds of 1500 baud, which was quite similar
-to the B-17 speeds, and probably played a role in reducing the market size and lifespan
-of the B-17 software. But for the Model I users, this was an inexpensive way to achieve
-higher data rates and satisfied a number of people.
+When the Model 3 was released, it had tape speeds of 1500 baud, which was close to B-17
+speed, and probably played a role in reducing the market size and lifespan of the B-17
+software. But for the Model I users, this was an inexpensive way to achieve higher data
+rates and satisfied a number of people.
 
 In order to save programs at the higher data rate, a utility program was required, but
 B-17 was unique in that the utility was required for loading most programs - when saving
@@ -46,7 +46,7 @@ Where possible, I will also try to locate B-17 format recordings so that they ca
 be analyzed.
 
 Commented disassemblies may follow at some point for any programs within the B-17 system,
-including the pre-loader.
+including the pre-loader (such disassemblies will reside in the Disassembly folder).
 
 
 ### [Documents](Documents) Folder
