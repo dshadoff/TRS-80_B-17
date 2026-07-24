@@ -1,5 +1,5 @@
 # TRS-80_B-17
-Information about ABS Suppliers' B-17 Software-based Tape System for the TRS-80 Model I
+Information about ABS Suppliers' B-17 Software-based Tape System for the TRS-80 Model I.
 
 ## Introduction
 
@@ -19,9 +19,9 @@ software.
 ## Overview
 
 The B-17 software was released, which reportedly improved cassette I/O speeds to 1700
-baud - a nearly 3-fold improvement over base Model I speeds.
+baud - an over 3-fold improvement over base Model I speeds.
 
-When the Model II was released, it had tape speeds of 1500 baud, which was quite similar
+When the Model 3 was released, it had tape speeds of 1500 baud, which was quite similar
 to the B-17 speeds, and probably played a role in reducing the market size and lifespan
 of the B-17 software. But for the Model I users, this was an inexpensive way to achieve
 higher data rates and satisfied a number of people.
