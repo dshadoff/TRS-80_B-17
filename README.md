@@ -27,10 +27,13 @@ software. But for the Model I users, this was an inexpensive way to achieve high
 rates and satisfied a number of people.
 
 In order to save programs at the higher data rate, a utility program was required, but
-B-17 was unique in that the utility was required for loading most programs - when saving
+B-17 was unique in that the utility was **NOT** required for loading most programs - when saving
 files, B-17 would automatically save a pre-loader at 500 baud which, without any user
-invovlement, would auto-start, and load the 'payload' program at 1700 baud. Surprisingly,
-this pre-loader required less than 256 bytes of storage !
+invovlement, would auto-start, and load the 'payload' program at 1700 baud. So, the program
+load could be started in the usual way, loading the loader which would automatically start,
+and load the remainder of the program at high speed.  Seamlessly.
+
+Surprisingly, this pre-loader required less than 256 bytes of storage !
 
 ## This Repository
 
