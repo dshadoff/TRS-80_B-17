@@ -38,10 +38,10 @@ no longer appears to be a squarewave, due to the limited frequency response of t
 
 ![Picture of several TRS-80 bits](../images/TRS-80-Mod1_500_macro.JPG)
 
-The pulses include both a descending and an ascending pulse (below and above the midway line), fulfilling
-the polarity requirement. Based on ROM disassemblies, these pulses are each approximately 450 microseconds
-wide. The delay between clock pulses is roughly 2 milliseconds, or 1 millisecond in the case of the '1' bit
-between clocks.
+The pulses include both a descending and an ascending pulse (below and above the midway line), so that they
+would register even if the input was reverse-polarity. Based on ROM disassemblies, these pulses are each
+approximately 450 microseconds wide. The delay between clock pulses is roughly 2 milliseconds, or
+1 millisecond in the case of the '1' bit between clocks.
 
 On playback, the clock pulses need to exceed a threshold voltage, in order to trigger a flip-flop to hold
 that value until deliberately reset. This flip-flop threshold voltage is almost certainly the reason for
@@ -71,7 +71,7 @@ B-17 arranges these bits with least-significant bit first.
 
 Below, we see the bytes: 00 00 5A 31:
 
-![Pulses arrounged as bytes: 00 00 5A 31](../images/B-17_1700baud_00_00_5A_31)
+![Pulses arranged as bytes: 00 00 5A 31](../images/B-17_1700baud_00_00_5A_31.JPG)
 
 #### B-17 Bit Timing
 
