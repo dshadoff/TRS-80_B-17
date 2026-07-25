@@ -75,9 +75,31 @@ Below, we see the bytes: 00 00 5A 31:
 
 #### B-17 Bit Timing
 
-TO BE ADDED
+From the disassembly of the loader, the timing of bits breaks down into the following parts:
 
-### TRS-80 Native Format - Assembling Bits into Bytes
+1. After finding the sync bit, there is an intentional wait of 844 cycles (or 475.8 microseconds)
+2. There is a further 19 cycles spent in setup to read the bit (10.7 microseconds)
+3. There are 9 consecutive attempts to read a bit as '1' or '0'
+   - Each attempt takes 51 cycles (plus 12 cycles at the end for a jump), for a total of 466 cycles (262.7 microseconds)
+   - if a '1' if detected, the same number of cycles is exhausted in loops, without continuing to look
+4. After the 'possibly active bit' period, there is an intentional delay of 406 cycles (228.9 microseconds)
+5. Then, the process goes back to step 2. above, until all bits of the byte have been read
+6. The inter-byte gap is more lenient, as there could be additional processing required (such as storing the byte, compiling the checksum value, etc.)
+
+So, inter-bit spacing is about 502 microseconds, or a total of (almost exactly) 4.5 milliseconds for the sync bit plus 8 data bits.
+This is between 1700 and 1800 data bits per second (after discrarding the sync bits).
+
+This can be illustrated by a '0x00' byte:
+
+![00 Byte](../images/B-17_1700baud_00_timing.JPG)
+
+
+It can also be illustrated by a '0x5A' byte:
+
+![5A Byte](../images/B-17_1700baud_5A_timing.JPG)
+
+
+### Assembling Bits into Bytes
 
 In order to assemble bits into bytes, two things must happen:
 1. Synchronization of bits at the byte boundary, and
@@ -92,7 +114,6 @@ in the sequence: 10100101 .  It is significant that the first bit of this sync b
 From this point onward, it is a simple bitstream, with every 8th bit implying a new byte.
 
 The structure of that bitstream is described in the TRS-80 Native tape protocol section below.
-
 
 #### B-17 Format
 
