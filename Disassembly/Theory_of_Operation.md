@@ -56,7 +56,7 @@ In this way, a series of pulses represents a series of bits.
 
 Below, we see the bits: 0 0 0 0 1 1 0 1:
 
-![Pulses arranged as bits: 00001101](500_baud_00001101.JPG)
+![Pulses arranged as bits: 00001101](../images/500_baud_00001101.JPG)
 
 
 #### B-17 Bit-Modulation
@@ -71,7 +71,7 @@ B-17 arranges these bits with least-significant bit first.
 
 Below, we see the bytes: 00 00 5A 31:
 
-![Pulses arrounged as bytes: 00 00 5A 31](B-17_1700baud_00_00_5A_31)
+![Pulses arrounged as bytes: 00 00 5A 31](../images/B-17_1700baud_00_00_5A_31)
 
 #### B-17 Bit Timing
 
