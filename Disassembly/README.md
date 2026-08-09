@@ -43,12 +43,11 @@ program to disassemble the contents.
 ## High-Level Analysis
 
 1. The B-17 system - at least for this particular example - is intended to write (and later read) a **CONTIGUOUS** block of data.
-2. The pre-loader contains additional memory-block-specific information "injected" into it:
+2. The pre-loader contains additional memory-block-specific information "injected" into it, and normally loads into the are from 0x4300 - 0x43EA (however, examples have been found which reside from 0x7D00 - 0x7DEA if the 0x4300 block is in use by the payload program):
    - The Start-Of-Block address is at 0x431B/1C
    - The Length-Of-Block value is at 0x431E/1F
    - The Entry address is at 0x4327/28
    - The name of the program is actually stored as part of the machine-language header of the pre-loader program (in this case, "PATROL")
-   - **NOTE:** Other examples of this loader have been found to reside at 0x7D00 if 0x4300 is in use by the payload program
 3. Bytes of data are written as a precisely-timed series of 8 bits, with the least-significant bit first.
 4. There is a "START" bit preceding this 8-bit train; in this way, there can be imprecisely-timed gaps between bytes.
 5. Every 256 bytes, there is a checksum byte inserted into the stream (and measured).
