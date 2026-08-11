@@ -8,9 +8,7 @@ I was able to locate some tapes I had created using B-17 back in the early 1980s
 and wanted to investigate the recording format, and how they were able to improve
 on the speed of the native TRS-80 format.
 
-(For a deeper dive into that, more information will appear later)
-
-Based on a disassembly of the B-17 Loader program which is prepednded to B-17 files,
+Based on a disassembly of the B-17 Loader program which is prepended to B-17 files,
 I was able to piece together enough information to decode binary (machine language) files.
 
 I have written a program in Python to be able to decode WAV files and display output
@@ -22,24 +20,24 @@ You can find more information about the actual tape encoding in the
 ### Internals:
 
 At a high level, the program has several major stages which it passes through; there
-is considerable complexity, so it may not currently read all files reliably. I will
+is considerable complexity so it may not currently read all files reliably. I will
 continue to make adjustments to improve the reliability.
 
 **MAJOR STEPS**
-1. The python program reads the entire WAV file into memory, and performs a rudimentary
+1. The python program reads the entire WAV file into memory and performs a rudimentary
 analysis on it, to attempt to determine the appropriate threshold levels for a pulse.
-   - All samples are placed into an array - as abosolute values - to determine the distribution of levels.
+   - All samples are placed into an array - as absolute values - to determine the distribution of levels.
    - The "realistic peak" values are determined based on having a certain percentage of samples at that range of values.
-   - The "threshold value" is determiend as 60% of the "realistic peak" value
-2. The file is initially read using TRS-80 Model 1 methods, searching for pulses spaced at 2ms apart, with or without an intermediate pulse between
-3. This segment of the audio file is validated against the loader in the [Disassembly](../Disassembly) folder
-4. Key information such as name, start address, length, and transfer address are extracted from the loader
-5. As the preloader validation completes, the program switches to decode B-17 data, including validating checksums
-6. The data is displayed as it is successfully extracted. 
+   - The "threshold value" is determined as 60% of the "realistic peak" value.
+2. The file is initially read using TRS-80 Model 1 methods, searching for pulses spaced at 2ms apart, with or without an intermediate pulse in-between.
+3. This segment of the audio file is validated against the loader in the [Disassembly](../Disassembly) folder.
+4. Key information such as name, start address, length, and transfer address are extracted from the loader.
+5. As the preloader validation completes, the program switches to decode B-17 data, including validating checksums.
+6. The data is displayed as it is successfully extracted.
 
 ### Prerequisites:
 
-The B-17 cassette recording must be recorded into a WAV file, using an audio program;
+The B-17 cassette recording must be recorded into a WAV file using an audio program;
 something like 'Audactiy' will work fine.
 
 The program currently only supports WAV files with the following parameters:
@@ -54,7 +52,7 @@ Files like this should be easy to create, but I may add support for stereo files
 Currently, only B-17 BINARY files are supported, while I continue to investigate the capabilities of
 the B-17 system.
 * BINARY (SUPPORTED)
-* BASIC (SUPPORT IS UNKNOWN)
+* BASIC (Not supported by these tools; B-17 support is not yet known)
 * Other (Not yet fully investigated)
 
 ### Command-line:
