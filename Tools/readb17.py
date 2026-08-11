@@ -30,17 +30,17 @@ B17_BIT0_MAX        = 25
 B17_BIT1_MIN        = 40    # range of samples for bit 1 offset from sync bit
 B17_BIT1_MAX        = 48
 B17_BIT2_MIN        = 63    # range of samples for bit 2 offset from sync bit
-B17_BIT2_MAX        = 70
+B17_BIT2_MAX        = 72
 B17_BIT3_MIN        = 84    # range of samples for bit 3 offset from sync bit
 B17_BIT3_MAX        = 93
 B17_BIT4_MIN        = 106   # range of samples for bit 4 offset from sync bit
-B17_BIT4_MAX        = 115
-B17_BIT5_MIN        = 128   # range of samples for bit 5 offset from sync bit
-B17_BIT5_MAX        = 137
-B17_BIT6_MIN        = 150   # range of samples for bit 6 offset from sync bit
-B17_BIT6_MAX        = 160
-B17_BIT7_MIN        = 171   # range of samples for bit 7 offset from sync bit
-B17_BIT7_MAX        = 183
+B17_BIT4_MAX        = 117
+B17_BIT5_MIN        = 126   # range of samples for bit 5 offset from sync bit
+B17_BIT5_MAX        = 139
+B17_BIT6_MIN        = 148   # range of samples for bit 6 offset from sync bit
+B17_BIT6_MAX        = 162
+B17_BIT7_MIN        = 169   # range of samples for bit 7 offset from sync bit
+B17_BIT7_MAX        = 185
 
 
 # Tokens in loader template
@@ -215,18 +215,16 @@ def get_b17_byte(mem_block):
 
 
 
-
-
 file_stat = os.stat(sys.argv[1])
 filesize = file_stat.st_size
-print("filesize = {0:5} KB".format(int(filesize/1024)))
+#print("filesize = {0:5} KB".format(int(filesize/1024)))
 
 f = open(sys.argv[1], 'rb') 
 memory = f.read()
 f.close()
-print("imported")
-
-print("")
+#print("imported")
+#
+#print("")
 
 val = read_int2(20, memory)
 if val == 1:
@@ -377,9 +375,10 @@ while (sync == False):
 #        print("First 1 bit at ", curr_position)
 #        exit()
     if (bit == 2):
-        print("Error reading at ", curr_position)
-        exit()
-    curr_byte_bits = (curr_byte_bits << 1) + bit
+#        print("Error reading at ", curr_position)
+        curr_byte_bits = 0
+    else:
+        curr_byte_bits = (curr_byte_bits << 1) + bit
     if (curr_byte_bits == 0xA5):
 #        print("Last bit of sync byte at ", curr_position)
         sync = True
@@ -533,7 +532,8 @@ print(" ")
 curr_position = curr_sample_num()
 
 print("Boot loader transition to B-17 format at sample number ", curr_position)
-
+print(" ")
+print("B-17 Payload Program:")
 #
 # Find B-17 Sync Byte (0x5A):
 #
