@@ -29,14 +29,14 @@ B17_BIT0_MIN        = 20    # range of samples for bit 0 offset from sync bit
 B17_BIT0_MAX        = 25
 B17_BIT1_MIN        = 40    # range of samples for bit 1 offset from sync bit
 B17_BIT1_MAX        = 48
-B17_BIT2_MIN        = 63    # range of samples for bit 2 offset from sync bit
+B17_BIT2_MIN        = 61    # range of samples for bit 2 offset from sync bit
 B17_BIT2_MAX        = 72
-B17_BIT3_MIN        = 84    # range of samples for bit 3 offset from sync bit
-B17_BIT3_MAX        = 93
+B17_BIT3_MIN        = 81    # range of samples for bit 3 offset from sync bit
+B17_BIT3_MAX        = 95
 B17_BIT4_MIN        = 106   # range of samples for bit 4 offset from sync bit
 B17_BIT4_MAX        = 117
 B17_BIT5_MIN        = 126   # range of samples for bit 5 offset from sync bit
-B17_BIT5_MAX        = 139
+B17_BIT5_MAX        = 141
 B17_BIT6_MIN        = 148   # range of samples for bit 6 offset from sync bit
 B17_BIT6_MAX        = 162
 B17_BIT7_MIN        = 169   # range of samples for bit 7 offset from sync bit
@@ -502,9 +502,14 @@ for i in range(0,0xEB):
 
 #print(" ")
 
-print("LOAD ADDRESS = 0x{0:02X}{1:02X}".format(loadaddr_msb, loadaddr_lsb))
-print("PROGRAM LEN  = 0x{0:02X}{1:02X}".format(loadlen_msb,  loadlen_lsb))
-print("XFER ADDRESS = 0x{0:02X}{1:02X}".format(xferaddr_msb, xferaddr_lsb))
+loadaddr = ((loadaddr_msb * 256) + loadaddr_lsb)
+loadlen  = ((loadlen_msb  * 256) + loadlen_lsb)
+xferaddr = ((xferaddr_msb * 256) + xferaddr_lsb)
+lastbyte = loadaddr + loadlen - 1
+
+print("LOAD ADDRESS = 0x{0:04X}".format(loadaddr))
+print("PROGRAM LEN  = 0x{0:04X} (Last Byte = 0x{1:04X})".format(loadlen, lastbyte))
+print("XFER ADDRESS = 0x{0:04X}".format(xferaddr))
 
 cksum = cksum & 0xFF
 
