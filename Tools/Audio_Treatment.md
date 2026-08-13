@@ -121,7 +121,9 @@ This means we are searching for an oddity within the next 1.247 seconds after th
 
 And the oddest thing we see, is a section between about 11.96 and 11.985 seconds, where there is a type of tape dropout:
 the overall waveform dips and rises in an undulating fashion (it should be centered), and the pulses are much shorter during
-this section.
+this section - essentially the same as in Example 2 above.
+
+![Treatment3_undulation.png](../images/Treatment3_undulation.png)
 
 Use Audacity's tools to identify a section that's lower than it should be, and use "Effect -> Volume and Compression -> Normalize",
 with only the "Remove DC Offset (center on 0.0 vertically)" setting checked. Repeat this for the section that is higher than it
