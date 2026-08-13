@@ -75,7 +75,13 @@ in amplitude to their neighbours, and that seemed to look OK. You can try differ
 will initially be offered by Audactity is almost certainly too much.
 
 
+This is the same section, after treatment:
+![Treatment2_after_normalize_amplify.png](../images/Treatment2_after_normalize_amplify.png)
+
+
+
 Now you can save it to a file and try to reprocess; in my case, it worked fine right after these small tweaks.
+
 
 
 ## Example 3 - "CHECKSUM ERROR"
