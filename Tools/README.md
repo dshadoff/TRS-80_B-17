@@ -1,6 +1,6 @@
 # TRS-80_B-17 Tools Folder
 
-Tools for reading tapes written by the B-17 System for the TRS-80 Model I
+Tools for reading tapes written by the B-17 System for the TRS-80 Model 1
 
 ## Overview
 
@@ -46,6 +46,11 @@ The program currently only supports WAV files with the following parameters:
 * 16-bit samples
 
 Files like this should be easy to create, but I may add support for stereo files in the future.
+
+### Audio Data Treatment
+
+In some rare cases, the audio data may be difficult to read as it isn't 100% consistent.
+For prescriptive measures, see the [Audio Treatment](Audio_Treatment.md) file.
 
 ### Supported file types:
 
