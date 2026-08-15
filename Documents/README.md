@@ -11,7 +11,7 @@ of usage are covered in the reviews.
 
 I will try to make an effort to write a "How to Use" section in the near future.
 
-### Reviews
+### Reviews:
 
 I was able to find two reviews in magazines from the period:
 
