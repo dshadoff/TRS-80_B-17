@@ -19,7 +19,7 @@ I was able to find two reviews in magazines from the period:
 This review describes the B-17 program, how it works, and its pros and cons with a brief overview on how
 to use it.
 
-2. [A review in 80 Microcomputing from March 1981](Reviews/Review_B17_ 80_Micro_1981-03.pdf). This review
+2. [A review in 80 Microcomputing from March 1981](Reviews/Review_B17_80_Micro_1981-03.pdf). This review
 was written and published as though it were its own article, which makes it quite detailed and inofrmative,
 but unfortunately, as it was not filed in the "Reviews" section of the magazine, it failed to appear in the
 annual index of articles and reviews. i was only able to find it thanks to a special review issue of 80 Micro.
