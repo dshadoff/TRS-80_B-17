@@ -15,7 +15,7 @@ I will try to make an effort to write a "How to Use" section in the near future.
 
 I was able to find two reviews in magazines from the period:
 
-1. [A reivew in The Alternate Source magazine, Volume 1, Number 2](Reviews/Review_The_Alternate_Source_Vol1_No2_page19-21.pdf).
+1. [A review in The Alternate Source magazine, Volume 1 Number 2](Reviews/Review_The_Alternate_Source_Vol1_No2_page19-21.pdf).
 This review describes the B-17 program, how it works, and its pros and cons (with a brief overview on how
 to use it).
 
