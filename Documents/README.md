@@ -16,8 +16,8 @@ I will try to make an effort to write a "How to Use" section in the near future.
 I was able to find two reviews in magazines from the period:
 
 1. [A review in The Alternate Source magazine, Volume 1 Number 2](Reviews/Review_The_Alternate_Source_Vol1_No2_page19-21.pdf).
-This review describes the B-17 program, how it works, and its pros and cons (with a brief overview on how
-to use it).
+This review describes the B-17 program, how it works, and its pros and cons with a brief overview on how
+to use it.
 
 2. [A review in 80 Microcomputing from March 1981](Reviews/Review_B17_ 80_Micro_1981-03.pdf). This review
 was written and published as though it were its own article, which makes it quite detailed and inofrmative,
