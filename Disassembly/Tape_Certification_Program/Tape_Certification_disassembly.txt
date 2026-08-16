@@ -1,0 +1,409 @@
+; B-17 Tape Certification Program
+;
+; This is theoretically a test to see whether a tape will be readable
+; it writes a leader of $00 values, then continuously incrementing byte values
+; until the user presses a button to stop it - then reads them back and compares
+; again, until the user presses a button to stop it
+;
+;
+7b70: 21 2d 7c  ld   hl,$7C2D   ; pointer to "B17 TAPE CERTIFICATION PROGRAM VERSION 1.0" heading
+7b73: cd 24 7c  call $7C24      ; print it on screen
+;
+; Test sequence
+;
+7b76: af        xor  a
+7b77: d3 ff     out  ($FF),a
+7b79: 21 61 7c  ld   hl,$7C61   ; pinter to "1) INSERT TAPE TO BE CERTIFIED INTO RECORDER..." string
+7b7c: cd 24 7c  call $7C24      ; print it on screen
+
+7b7f: 01 00 80  ld   bc,$8000   ; big long delay
+7b82: 0b        dec  bc
+7b83: 78        ld   a,b
+7b84: b1        or   c
+7b85: 20 fb     jr   nz,$7B82
+
+7b87: 21 41 38  ld   hl,$3841   ; keyboard addr
+7b8a: cb 46     bit  0,(hl)     ; check ENTER (or @)
+7b8c: 28 fc     jr   z,$7B8A    ; wait until hit
+
+7b8e: 21 bb 7c  ld   hl,$7CBB   ; pointer to "TEST WRITING TO TAPE NOW IN PROGRESS" string
+7b91: cd 24 7c  call $7C24      ; print it on screen
+
+7b94: 3e 04     ld   a,$04      ; motor on
+7b96: d3 ff     out  ($FF),a    ; send to cassette
+
+7b98: 06 02     ld   b,$02      ; massive countdown (2 * $10000) - to wait for ENTER key to be released
+7b9a: 11 00 00  ld   de,$0000
+7b9d: 1b        dec  de
+7b9e: 7a        ld   a,d
+7b9f: b3        or   e
+7ba0: 20 fb     jr   nz,$7B9D
+7ba2: 10 f9     djnz $7B9D
+
+7ba4: 01 00 00  ld   bc,$0000   ; set up 256 bytes of zeroes as a leader
+7ba7: cd ef 7d  call $7DEF      ; write a byte
+7baa: 10 fb     djnz $7BA7
+
+7bac: 0e 00     ld   c,$00      ; first byte to write = $00
+7bae: 21 41 38  ld   hl,$3841   ; keyboard location
+
+7bb1: cd ef 7d  call $7DEF      ; write a byte
+7bb4: cd 2a 7e  call $7E2A      ; scroll the "write" marquee
+7bb7: 0c        inc  c          ; increment the value to be written
+
+7bb8: cb 46     bit  0,(hl)     ; watch for keypress
+7bba: 28 f5     jr   z,$7BB1    ; keep writing until key pressed
+7bbc: af        xor  a          ; motor off
+7bbd: d3 ff     out  ($FF),a    ; send to cassette
+
+7bbf: 21 00 7d  ld   hl,$7D00   ; pointer to "1) REWIND TAPE TO START OF TEST WRITE..." string
+7bc2: cd 24 7c  call $7C24      ; print it on screen
+
+7bc5: 01 00 80  ld   bc,$8000   ; countdown delay ($8000) - to wait for ENTER key to be released
+7bc8: 0b        dec  bc
+7bc9: 78        ld   a,b
+7bca: b1        or   c
+7bcb: 20 fb     jr   nz,$7BC8
+
+7bcd: 21 41 38  ld   hl,$3841   ; scan keyboard
+7bd0: cb 46     bit  0,(hl)     ; check for ENTER or @
+7bd2: 28 fc     jr   z,$7BD0    ; wait until hit
+
+7bd4: 3e 04     ld   a,$04      ; motor on
+7bd6: d3 ff     out  ($FF),a    ; send to cassette
+7bd8: 21 52 7d  ld   hl,$7D52   ; pointer to "TEST READ NOW IN PROGRESS" string
+7bdb: cd 24 7c  call $7C24      ; print it on screen
+
+7bde: 16 80     ld   d,$80
+7be0: cd 63 7e  call $7E63      ; read a byte ($80 times) - leader, to be ignored
+7be3: 15        dec  d
+7be4: 20 fa     jr   nz,$7BE0
+
+7be6: af        xor  a
+7be7: cd 63 7e  call $7E63      ; read a byte
+7bea: b1        or   c
+7beb: 28 fa     jr   z,$7BE7    ; read bytes until one of them is non-zero
+
+7bed: fe 01     cp   $01
+7bef: 20 1c     jr   nz,$7C0D   ; check that it starts with $01 - if not, it's an error
+
+7bf1: 3e 02     ld   a,$02      ; OK, next byte should be $02 then
+7bf3: 21 41 38  ld   hl,$3841   ; keyboard address
+7bf6: cd 63 7e  call $7E63      ; read a byte
+7bf9: cd a2 7e  call $7EA2      ; move the "read" marquee
+7bfc: b9        cp   c
+7bfd: 20 0e     jr   nz,$7C0D   ; if not a match, print error
+7bff: 3c        inc  a          ; continue checking for "next up" value read
+7c00: cb 46     bit  0,(hl)     ; watch for keypress
+7c02: 28 f2     jr   z,$7BF6    ; continue reading as long as no key pressed
+
+7c04: 21 e0 7d  ld   hl,$7DE0   ; pointer to $1c/$1f string (clear screen)
+7c07: cd 24 7c  call $7C24      ; print it on screen
+7c0a: c3 76 7b  jp   $7B76      ; repeat test sequence
+
+7c0d: 21 9e 7d  ld   hl,$7D9E   ; pointer to "********** TAPE ERROR FOUND **********" string
+7c10: cd 24 7c  call $7C24      ; print it on screen
+7c13: 21 41 38  ld   hl,$3841   ; scan keyboard
+7c16: cb 46     bit  0,(hl)     ; check for ENTER or @
+7c18: 28 fc     jr   z,$7C16    ; wait until hit
+7c1a: 18 e8     jr   $7C04      ; celar screen and start over
+
+7c1c: 21 e3 7d  ld   hl,$7DE3   ; pointer to "BREK-BREAK" string
+7c1f: cd 24 7c  call $7C24      ; print it on screen
+7c22: 18 fe     jr   $7C22      ; endless loop
+
+;
+; Print Function - print a zero-terminated string
+;
+7c24: 7e        ld   a,(hl)     ; read from memory at HL
+7c25: b7        or   a
+7c26: c8        ret  z          ; return if zero (zero-terminated string)
+7c27: cd 33 00  call $0033      ; print a char
+7c2a: 23        inc  hl
+7c2b: 18 f7     jr   $7C24
+
+
+7c2d: 1c        db   $1c
+7c2e: 1f        db   $1f
+
+7c2f:           db  'B17 TAPE CERTIFICATION PROGRAM'
+      42 31 37 20 54 41 50 45 20 43 45 52 54 49 46 49
+7c3f: 43 41 54 49 4f 4e 20 50 52 4f 47 52 41 4d
+7c4d: 0d        db   $0d
+7c4e:           db   '     VERSION 1.0'
+      20 20 20 20 20 56 45 52 53 49 4f 4e 20 31 2e 30
+7c5e: 0d        db   $0d
+7c5f: 0d        db   $0d
+7c60: 00        db   $00
+
+
+7c61:           db   '1) INSERT TAPE TO BE CERTIFIED INTO RECORDER'
+      31 29 20 49 4e 53 45 52 54 20 54 41 50 45 20 54
+7c71: 4f 20 42 45 20 43 45 52 54 49 46 49 45 44 20 49
+7c81: 4e 54 4f 20 52 45 43 4f 52 44 45 52
+7c8d: 0d        db   $0d
+7c8e: 0d        db   $0d
+7c8f:           db   '2) SET RECORDER TO RECORD'
+      32 29 20 53 45 54 20 52 45 43 4f 52 44 45 52 20
+7c9f: 54 4f 20 52 45 43 4f 52 44
+7ca8: 0d        db   $0d
+7ca9: 0d        db   $0d
+7caa:           db   '3) PRESS ENTER'
+      33 29 20 50 52 45 53 53 20 45 4e 54 45 52
+7cb8: 0d        db   $0d
+7cb9: 0d        db   $0d
+7cba: 00        db   $00
+
+7cbb: 1c        db   $1c
+7cbc: 1f        db   $1f
+7cbd: 0d        db   $0d
+7cbe:           db   'TEST WRITING TO TAPE NOW IN PROGRESS'
+      54 45 53 54 20 57 52 49 54 49 4e 47 20 54 4f 20
+7cce: 54 41 50 45 20 4e 4f 57 20 49 4e 20 50 52 4f 47
+7cde: 52 45 53 53
+
+7ce2: 0d        db   $0d
+7ce3: 0d        db   $0d
+7ce4:           db   'PRESS ENTER WHEN COMPLETE'
+      50 52 45 53 53 20 45 4e 54 45 52 20 57 48 45 4e
+7cf4: 20 43 4f 4d 50 4c 45 54 45
+7cfd: 0d        db   $0d
+7cfe: 0d        db   $0d
+7cff: 00        db   $00
+
+7d00: 1f        db   $1f
+7d01: 1c        db   $1c
+7d02:           db   '1) REWIND TAPE TO START OF TEST WRITE'
+      31 29 20 52 45 57 49 4e 44 20 54 41 50 45 20 54
+7d12: 4f 20 53 54 41 52 54 20 4f 46 20 54 45 53 54 20
+7d22: 57 52 49 54 45
+
+7d27: 0d        db   $0d
+7d28: 0d        db   $0d
+7d29:           db   '2) SET RECORDER TO PLAY AND PRESS ENTER'
+      32 29 20 53 45 54 20 52 45 43 4f 52 44 45 52 20
+7d39: 54 4f 20 50 4c 41 59 20 41 4e 44 20 50 52 45 53
+7d49: 53 20 45 4e 54 45 52
+7d50: 0d        db   $0d
+7d51: 00        db   $00
+
+7d52: 1c        db   $1c
+7d53: 1f        db   $1f
+7d54:           db   'TEST READ NOW IN PROGRESS'
+      54 45 53 54 20 52 45 41 44 20 4e 4f 57 20 49 4e
+7d64: 20 50 52 4f 47 52 45 53 53
+7d6d: 0d        db   $0d
+7d6e: 0d        db   $0d
+7d6f:           db   'PRESS ENTER TO RESTART AFTER INDICATOR APPEARS'
+      50 52 45 53 53 20 45 4e 54 45 52 20 54 4f 20 52
+7d7f: 45 53 54 41 52 54 20 41 46 54 45 52 20 49 4e 44
+7d8f: 49 43 41 54 4f 52 20 41 50 50 45 41 52 53
+7d9d: 00        db   $00
+
+7d9e: 1c        db   $1c
+7d9f: 1f        db   $1f
+7da0:           db   '********** TAPE ERROR FOUND **********'
+      2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 20 54 41 50 45 20
+7db0: 45 52 52 4f 52 20 46 4f 55 4e 44 20 2a 2a 2a 2a
+7dc0: 2a 2a 2a 2a 2a 2a
+7dc6: 0d        db   $0d
+7dc7: 0d        db   $0d
+7dc8: 0d        db   $0d
+7dc9:           db   'PRESS ENTER TO RESTART'
+      50 52 45 53 53 20 45 4e 54 45 52 20 54 4f 20 52
+7dd9: 45 53 54 41 52 54
+7ddf: 00        db   $00
+
+7de0: 1c        db   $1c            ; clear screen
+7de1: 1f        db   $1f
+7de2: 00        db   $00
+
+7de3:           db   'BREAK-BREAK'
+      42 52 45 41 4b 2d 42 52 45 41 4b
+7dee: 00        db   $00
+
+;
+; Write a byte - byte comes in 'C' register
+;
+; write 9 bite - a '1' start bit, with an 8-bit pulse train (present = '1'; absent = '0')
+; following it, with precise timing
+;
+7def: f5        push af
+7df0: c5        push bc
+7df1: d5        push de
+7df2: 16 09     ld   d,$09          ; 9 bits
+7df4: 37        scf                 ; set carry flag - start bit is always '1'
+
+; no pulse - delay instead
+;
+7df5: 38 08     jr   c,$7DFF        ; if bit not set, then don't output a pulse (just delay instead)
+7df7: 06 23     ld   b,$23
+7df9: 10 fe     djnz $7DF9
+7dfb: 00        nop
+7dfc: 00        nop
+7dfd: 18 18     jr   $7E17
+
+; output a pulse
+;
+7dff: 3e 05     ld   a,$05          ; motor on, pulse high
+7e01: d3 ff     out  ($FF),a        ; send to cassette
+7e03: 23        inc  hl             ; delay
+7e04: 2b        dec  hl
+7e05: 06 0f     ld   b,$0F
+7e07: 10 fe     djnz $7E07
+7e09: 3e 06     ld   a,$06          ; motor on, pulse low
+7e0b: d3 ff     out  ($FF),a        ; send to cassette
+7e0d: 23        inc  hl             ; delay
+7e0e: 2b        dec  hl
+7e0f: 06 0f     ld   b,$0F
+7e11: 10 fe     djnz $7E11
+7e13: 3e 04     ld   a,$04          ; motor on, no pulse (neutral)
+7e15: d3 ff     out  ($FF),a        ; send to cassette
+
+; circle back for next bit
+;
+7e17: 06 1e     ld   b,$1E          ; delay
+7e19: 10 fe     djnz $7E19
+7e1b: 00        nop
+7e1c: 00        nop
+7e1d: cb 19     rr   c              ; check next bit
+7e1f: 15        dec  d              ; decrement bit counter
+7e20: 20 d3     jr   nz,$7DF5       ; loop for next bit
+7e22: 06 07     ld   b,$07          ; small delay at end of byte
+7e24: 10 fe     djnz $7E24
+7e26: d1        pop  de
+7e27: c1        pop  bc
+7e28: f1        pop  af
+7e29: c9        ret
+
+;
+; While writing, rotate a marquee in the top right corner
+;
+7e2a: f5        push af
+7e2b: c5        push bc
+7e2c: d5        push de
+7e2d: e5        push hl
+7e2e: 3e 49     ld   a,$49          ; 'I'
+7e30: 32 33 3c  ld   ($3C33),a
+7e33: 3e 4f     ld   a,$4F          ; 'O'
+7e35: 32 3f 3c  ld   ($3C3F),a
+7e38: 21 61 7e  ld   hl,$7E61       ; decrement the once-in-20 counter
+7e3b: 35        dec  (hl)
+7e3c: 20 1e     jr   nz,$7E5C       ; not zero ?  OK, we're done here
+7e3e: 36 14     ld   (hl),$14       ; reload the counter
+7e40: 01 0a 00  ld   bc,$000A       ; shift the marquee to the right (10 characters)
+7e43: 11 3e 3c  ld   de,$3C3E
+7e46: 21 3d 3c  ld   hl,$3C3D
+7e49: ed b8     lddr
+7e4b: 21 62 7e  ld   hl,$7E62       ; decrement to once-in-4 counter
+7e4e: 35        dec  (hl)
+7e4f: 20 06     jr   nz,$7E57       ; not zero ?  OK, put a '-' in the marquee
+7e51: 36 04     ld   (hl),$04       ; else, reload the counter
+7e53: 3e 3e     ld   a,$3E          ; put a '>' in the marquee
+7e55: 18 02     jr   $7E59
+7e57: 3e 2d     ld   a,$2D          ; '-'
+7e59: 32 34 3c  ld   ($3C34),a      ; put a '-' three times out of 4, or '>' once
+7e5c: e1        pop  hl
+7e5d: d1        pop  de
+7e5e: c1        pop  bc
+7e5f: f1        pop  af
+7e60: c9        ret
+
+;
+; variables used in the marquee-shift rountines
+; 
+7e61: 14        db   $14            ; initial value of the one-in-20 counter
+7e62: 04        db   $04            ; initial value of the one-in-4 counter
+
+;
+; Read a byte - byte returns in 'C' register
+;
+; wait for a'1' start bit, then read 8 precisely-timed pulses or absences (present = '1'; absent = '0')
+;
+7e63: f5        push af
+7e64: d5        push de
+7e65: 16 08     ld   d,$08          ; 8 bits to be read
+7e67: 3e 04     ld   a,$04          ; motor on, no pulse (neutral) - turn motor on
+7e69: d3 ff     out  ($FF),a        ; send to cassette
+7e6b: db ff     in   a,($FF)        ; read from cassette latch
+7e6d: 17        rla
+7e6e: 30 fb     jr   nc,$7E6B       ; wait until a bit is read
+
+7e70: 06 41     ld   b,$41          ; delay
+7e72: 10 fe     djnz $7E72
+
+; loop to read bits
+;
+7e74: 06 09     ld   b,$09          ; try reading it up to 9 times
+7e76: 3e 04     ld   a,$04          ; motor on, no pulse (neutral) - resset latch
+7e78: d3 ff     out  ($FF),a        ; send to cassette
+7e7a: db ff     in   a,($FF)        ; read from cassette latch
+7e7c: 17        rla
+7e7d: 00        nop
+7e7e: 38 0c     jr   c,$7E8C        ; successfully read a '1' bit - now exhaust the remaining countdown
+7e80: 23        inc  hl
+7e81: 2b        dec  hl
+7e82: 10 f6     djnz $7E7A          ; no bit found here - try again (up to 9 times)
+7e84: 18 0d     jr   $7E93          ; OK, no bit was found, it's considered a '0'
+
+7e86: 2b        dec  hl             ; decrement the countdown without attempting to read the bit again.
+7e87: 2b        dec  hl
+7e88: 23        inc  hl
+7e89: 23        inc  hl
+7e8a: f6 00     or   $00
+7e8c: f6 00     or   $00            ; entry point to the countdown is here for reasons of precise timing
+7e8e: 10 f6     djnz $7E86
+
+7e90: 37        scf                 ; it's a '1' (from above)
+7e91: 00        nop
+7e92: 00        nop
+
+; assemble the bit into the byte
+;
+7e93: cb 19     rr   c              ; shift the bit into position
+7e95: 06 1c     ld   b,$1C          ; delay
+7e97: 10 fe     djnz $7E97
+7e99: 23        inc  hl
+7e9a: 00        nop
+7e9b: 2b        dec  hl
+
+7e9c: 15        dec  d              ; go back for next bit ?
+7e9d: 20 d5     jr   nz,$7E74
+
+7e9f: d1        pop  de             ; OK, return with byte in C
+7ea0: f1        pop  af
+7ea1: c9        ret
+
+
+;
+; While reading, rotate a marquee in the top right corner
+;
+7ea2: f5        push af
+7ea3: c5        push bc
+7ea4: d5        push de
+7ea5: e5        push hl
+7ea6: 3e 49     ld   a,$49          ; 'I'
+7ea8: 32 33 3c  ld   ($3C33),a
+7eab: 3e 4f     ld   a,$4F          ; 'O'
+7ead: 32 3f 3c  ld   ($3C3F),a
+7eb0: 21 61 7e  ld   hl,$7E61       ; decrement the once-in-20 counter
+7eb3: 35        dec  (hl)
+7eb4: 20 1e     jr   nz,$7ED4       ; not zero ?  OK, we're done here
+7eb6: 36 14     ld   (hl),$14       ; reload the counter
+7eb8: 01 0a 00  ld   bc,$000A
+7ebb: 11 34 3c  ld   de,$3C34       ; shift the marquee to the left
+7ebe: 21 35 3c  ld   hl,$3C35
+7ec1: ed b0     ldir
+7ec3: 21 62 7e  ld   hl,$7E62       ; decrement to once-in-4 counter
+7ec6: 35        dec  (hl)
+7ec7: 20 06     jr   nz,$7ECF       ; not zero ?  OK, put a '-' in the marquee
+7ec9: 36 04     ld   (hl),$04       ; else, reload the counter
+7ecb: 3e 3c     ld   a,$3C          ; put a '<' in the marquee
+7ecd: 18 02     jr   $7ED1
+7ecf: 3e 2d     ld   a,$2D          ; '-'
+7ed1: 32 3e 3c  ld   ($3C3E),a      ; put a '-' three times out of 4, or '<' once
+7ed4: e1        pop  hl
+7ed5: d1        pop  de
+7ed6: c1        pop  bc
+7ed7: f1        pop  af
+7ed8: c9        ret
