@@ -34,7 +34,15 @@ Here is what WAV2CAS showed as the contents for Load Block 2:
 I then hand-entered this data into a binary file [HERE](B-17_loader.bin), and used MAME's "unidasm"
 program to disassemble the contents.
 
-[The full, commented disassembly is here](B-17_loader_disassembly.txt)
+
+While reviewing the B-17 System cassettes' "System Module" (which attaches this pre-loader to a
+program as part of converting it to B-17 format), I found that I had two differet versions of the
+cassettes, and there was a minor difference between them:
+1. The original, for 16K systems, is disassembled here. There are versions to reside at $4300 or $7D00.
+   - [The full, commented disassembly of the 16K version is here](B-17_loader_disassembly.txt)
+2. An updated version, for 48K system, is also disassembled here, drawing attention to its similarites
+and differences. There are versions to reside at $4300 or $FD00.
+   - [The full, commented disassembly of the 48K version is here](B-17_loader_48K_disassembly.txt)
 
 
 ## High-Level Analysis

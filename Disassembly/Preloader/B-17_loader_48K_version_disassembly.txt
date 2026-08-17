@@ -1,0 +1,208 @@
+; B-17 Loader - UPDATED Version from 48K tape
+; -------------------------------------------
+; (However both versions claim to be version 3)
+;
+; Differences from original version are primarily that the "read a byte"
+; function uses different delay loops and does not take multiple samples
+; per bit, resulting in a net reduction in size of 15 bytes.
+; (See "** NOTE **" call-outs below)
+; Note also that I have not yet done cycle-counting to determine whether
+; read/write speeds are identical
+;
+; Notes:
+; 1) The only locations which change based on the program being loaded are:
+;    $431b, $431c - Start of block
+;    $431e, $431f - Number of bytes to load
+;    $4327, $4328 - Entry address
+;
+; 2) Another version of this preloader is available which can be loaded at
+;    location $7D00.  It is byte-for-byte identical except for the absolute
+;    addressing bytes at the following locations:
+;    $430B,
+;    $4311,
+;    $4316,
+;    $4322,
+;    $432B,
+;    $432E,
+;    $4331,
+;    $437E,
+;    $4391,
+;    $43AA,
+;    $43B4,
+;    $43BC
+;
+;-------------------------------------------------
+;
+; First block of the pre-load header is:
+401E: 00 43
+;
+; -> this is overriding the video driver pointer address
+;    which gets called at "SYSTEM" completion,
+;    to auto-start the loader at $4300
+;
+;
+; Second block is as follows:
+;
+4300: 21 58 04     ld   hl,$0458            ; restore original value to the video driver
+4303: 22 1e 40     ld   ($401E),hl
+
+4306: 21 00 00     ld   hl,$0000            ; reset checksum counters - $00 value, $00 until next checksum byte
+4309: 22 3a 43     ld   ($433A),hl
+430c: 21 14 04     ld   hl,$0414            ; countdown numbers; $14 bytes until a shift, $04 shifts until a '<'
+430f: 22 3c 43     ld   ($433C),hl
+4312: 3e 5a        ld   a,$5A               ; header value
+4314: cd 3e 43     call $433E               ; get a byte
+4317: b9           cp   c
+4318: 20 fa        jr   nz,$4314            ; keep reading until you read $5A
+
+431a: 21 00 00     ld   hl,$0000            ; load program into 0x??00                      *** VARIES BY PROGRAM
+431d: 11 00 00     ld   de,$0000            ; length of program (0x??00 - 0x????)           *** VARIES BY PROGRAM
+4320: cd 29 43     call $4329               ; load the whole program
+4323: af           xor  a
+4324: d3 ff        out  ($FF),a             ; turn off motor
+4326: c3 00 00     jp   $0000               ; entry point of the program (PATROL) = 0x??00  *** VARIES BY PROGRAM
+
+4329: cd 3e 43     call $433E               ; load byte
+432c: cd 6e 43     call $436E               ; check to shift marquee
+432f: cd a5 43     call $43A5               ; checksum
+4332: 71           ld   (hl),c              ; put byte into memory
+4333: 23           inc  hl                  ; inc pointer
+4334: 1b           dec  de                  ; dec # of bytes left
+4335: 7a           ld   a,d
+4336: b3           or   e
+4337: 20 f0        jr   nz,$4329            ; if not zero bytes, loop
+4339: c9           ret
+
+; storage (set to '0000' at entry)
+;
+433a: 00           db   0               ; bytes until a checksum byte appears
+433b: 00           db   0               ; current checksum value
+
+; storage (set to 0414 at entry)
+;
+433c: 14           db   20              ; (bytes until a shift of the marquee)
+433d: 04           db   4               ; (shifts until a '<' gets added
+
+;
+; Read Byte subroutine
+;
+; ** NOTE **
+; This subroutine is where all of the differences from the original version are
+;
+433e: f5           push af
+433f: d5           push de
+4340: 16 08        ld   d,$08           ; 8 bits in a byte
+
+4342: 3e 04        ld   a,$04           ; motor on, clear data latches
+4344: d3 ff        out  ($FF),a
+
+4346: db ff        in   a,($FF)         ; read cassette data latch (bit 7 is the input latch)
+4348: 17           rla
+4349: 30 fb        jr   nc,$4346        ; wait until a blip (sync pulse) - first pulse, or start bit
+
+; ** NOTE ** This section up to $435d ($436c in original) is changed from the original version
+; Different timing numbers are used, and only one sample is taken
+; resulting in a savings of 17 bytes, as this is considerably simplified
+;
+434b: db ff        in   a,($FF)         ; read bit from input latch and ignore it
+434d: 06 21        ld   b,$21           ; delay
+434f: 10 fe        djnz $434F
+4351: 3e 04        ld   a,$04           ; motor one & clear input latch
+4353: d3 ff        out  ($FF),a         ; send to cassette
+4355: 00           nop                  ; delay
+4356: 06 17        ld   b,$17
+4358: 10 fe        djnz $4358
+435a: db ff        in   a,($FF)         ; read bit from input latch
+435c: 17           rla                  ; put latch state into carry flag
+
+435d: cb 19        rr   c               ; rotate bit into c register
+
+; ** NOTE ** This delay up to $4368 ($4377 in original) is changed from the original version
+; Also, two additional bytes are used
+;
+435f: 06 07        ld   b,$07           ; delay
+4361: 10 fe        djnz $4361
+4363: 00           nop
+4364: 00           nop
+4365: 00           nop
+4366: f6 00        or   $00
+
+4368: 15           dec  d               ; one less bit until done
+4369: 20 e6        jr   nz,$4351        ; loop until none left
+
+436b: d1           pop  de
+436c: f1           pop  af
+436d: c9           ret
+
+;
+; display a shifting marquee to represent data being loaded
+;
+436e: f5           push af
+436f: c5           push bc
+4370: d5           push de
+4371: e5           push hl
+4372: 3e 49        ld   a,$49           ; 'I'
+4374: 32 33 3c     ld   ($3C33),a
+4377: 3e 4f        ld   a,$4F           ; 'O'
+4379: 32 3f 3c     ld   ($3C3F),a
+437c: 21 3c 43     ld   hl,$433C        ; $433c is a countdown
+437f: 35           dec  (hl)
+4380: 20 1e        jr   nz,$43A0        ; if not zero, exit
+4382: 36 14        ld   (hl),$14        ; reset counter to 20 decimal
+4384: 01 0a 00     ld   bc,$000A        ; 10-character moving marquee during load
+4387: 11 34 3c     ld   de,$3C34
+438a: 21 35 3c     ld   hl,$3C35
+438d: ed b0        ldir                 ; shift it left 1 character
+438f: 21 3d 43     ld   hl,$433D        ; $433d is also a countdown for the marquee
+4392: 35           dec  (hl)
+4393: 20 06        jr   nz,$439B        ; common path
+4395: 36 04        ld   (hl),$04        ; reset counter to 4; every 4th shift, put a '<'
+4397: 3e 3c        ld   a,$3C           ; '<'
+4399: 18 02        jr   $439D
+439b: 3e 2d        ld   a,$2D           ; '-'
+439d: 32 3e 3c     ld   ($3C3E),a
+43a0: e1           pop  hl
+43a1: d1           pop  de
+43a2: c1           pop  bc
+43a3: f1           pop  af
+43a4: c9           ret
+
+; check the checksum
+;
+43a5: f5           push af
+43a6: c5           push bc
+43a7: e5           push hl
+43a8: 21 3b 43     ld   hl,$433B        ; $433B is the running checksum
+43ab: 79           ld   a,c
+43ac: 86           add  a,(hl)
+43ad: 77           ld   (hl),a
+43ae: 2b           dec  hl
+43af: 35           dec  (hl)            ; $433A counts down bytes in a block
+43b0: 20 26        jr   nz,$43D8        ; not time to check checksum yet
+43b2: cd 3e 43     call $433E           ; grab checksum byte
+43b5: 79           ld   a,c
+43b6: 23           inc  hl
+43b7: be           cp   (hl)            ; does the checksum match ?
+43b8: 28 1e        jr   z,$43D8         ; match, so pop vars and return
+
+; display error message if checksum bad
+;
+43ba: 06 0f        ld   b,$0F           ; message is 15 characters
+43bc: 21 c9 43     ld   hl,$43C9        ; starting addr
+43bf: 7e           ld   a,(hl)          ; display loop
+43c0: cd 33 00     call $0033
+43c3: 23           inc  hl
+43c4: 10 f9        djnz $43BF
+43c6: c3 cc 06     jp   $06CC           ; addr of BASIC READY routine
+
+; message to display
+;
+43c9:              db  'CHECKSUM ERROR'
+      43 48 45 43 4b 53 55 4d 20 45 52 52 4f 52
+43e6: 0d        db  $0d
+
+
+43d8: e1           pop  hl
+43d9: c1           pop  bc
+43da: f1           pop  af
+43db: c9           ret
