@@ -29,8 +29,8 @@ On the B-17 cassettes, there were three programs included:
    - Disassembly not yet available
 2. B-17 System Module, which was able to transform binary programs into self-loading
 B-17 format by prepending a B-17 loader at 500 baud.
-   - [Disassembly HERE](System_Module),currently only 16K version
-   - [Preloader Disassembly is HERE](Preloader), the preloader which is prepended to programs output by the System Module
+   - [Disassemblies of the program HERE](System_Module), calling out changes between 16K and 48K (later) versions.
+   - [Disassemblies of the Preloader HERE](Preloader), the preloader which is prepended to programs output by the System Module, calling out changes between 16K and 48K (later) versions.
 3. B-17 Tape Certification Program, which was intended to test and validate cassettes for use with B-17.
    - [Disassembly HERE](Tape_Certification_Program), no difference between 16K and 48K versions.
 
