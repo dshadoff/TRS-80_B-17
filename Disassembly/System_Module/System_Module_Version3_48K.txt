@@ -1,0 +1,501 @@
+;
+; B-17 System Module Version 3 (16K)
+; ----------------------------------
+;
+; This program allows a 500 baud program to be loaded into a buffer,
+; and then output as a 1700 baud program, with a 500-baud preloader
+; which automatically loads the payload program.
+; 
+; There are versions of the preloader which are resident at $4300 and $FD00
+;
+; First block is as follows:
+;
+; 4300 - 43DB: Preloader block (as described in the Preloader disassembly)
+;
+
+
+; Entry address:
+;---------------
+43dc: 21 cd 45     ld   hl,$45CD            ; pointer to "B17 System Module" title string
+43df: cd c4 45     call $45C4               ; print it
+
+43e2: af           xor  a
+43e3: d3 ff        out  ($FF),a             ; turn off motor
+43e5: 21 fd 45     ld   hl,$45FD            ; pointer to "INSERT SOURCE TAPE AND PRESS ENTER" string
+43e8: cd c4 45     call $45C4               ; print it
+43eb: 21 41 38     ld   hl,$3841            ; keyboard address
+43ee: cb 46        bit  0,(hl)              ; watch for keypress
+43f0: 28 fc        jr   z,$43EE             ; loop until ENTER or @
+
+43f2: 3e 00        ld   a,$00
+43f4: cd 12 02     call $0212               ; select cassette unit
+43f7: cd 96 02     call $0296               ; find leader and sync byte
+43fa: cd 35 02     call $0235               ; Read a byte (500 baud)
+43fd: fe 55        cp   $55                 ; Check that it's a machine language program
+43ff: c2 98 45     jp   nz,$4598            ; wrong format, show error
+4402: 06 06        ld   b,$06
+4404: 21 69 47     ld   hl,$4769            ; Put 6-character filename in $4769
+4407: cd 35 02     call $0235               ; Read a byte (500 baud)
+440a: 77           ld   (hl),a
+440b: 23           inc  hl
+440c: 10 f9        djnz $4407
+
+440e: cd 35 02     call $0235               ; Read a byte (500 baud)
+4411: fe 3c        cp   $3C                 ; data block
+4413: c2 98 45     jp   nz,$4598            ; wrong format, show error
+4416: cd 35 02     call $0235               ; Read a byte (500 baud) - block length
+4419: 47           ld   b,a
+441a: cd 35 02     call $0235               ; Read a byte (500 baud) - LSB of block address
+441d: 4f           ld   c,a
+441e: 5f           ld   e,a
+441f: cd 35 02     call $0235               ; Read a byte (500 baud) - MSB of block address
+4422: 57           ld   d,a
+4423: 81           add  a,c
+4424: 4f           ld   c,a
+4425: ed 53 1b 43  ld   ($431B),de          ; preload starting point into loader at $4300
+
+4429: 21 6f 47     ld   hl,$476F            ; Buffer to store the data (program being loaded)
+442c: cd 35 02     call $0235               ; Read a byte (500 baud) - data inside block
+442f: 77           ld   (hl),a
+4430: 81           add  a,c                 ; c is the checksum
+4431: 4f           ld   c,a
+4432: 23           inc  hl
+4433: 13           inc  de
+4434: 10 f6        djnz $442C
+
+; get additional blocks from cassette (500 baud)
+;
+4436: cd 35 02     call $0235               ; Read a byte (500 baud) - checksum
+4439: b9           cp   c                   ; checksum - if issue, then...
+443a: c2 ba 43     jp   nz,$43BA            ; jump to the "CHECKSUM ERROR" print function in the loader
+
+443d: 3a 3e 3c     ld   a,($3C3E)           ; flash the asterisk during load
+4440: ee 0a        xor  $0A
+4442: 32 3e 3c     ld   ($3C3E),a
+
+4445: cd 35 02     call $0235               ; Read a byte (500 baud) - block type
+4448: fe 78        cp   $78                 ; transfer address
+444a: 28 31        jr   z,$447D
+444c: fe 3c        cp   $3C                 ; data block
+444e: c2 98 45     jp   nz,$4598            ; wrong format, show error
+4451: cd 35 02     call $0235               ; Read a byte (500 baud) - langth
+4454: 47           ld   b,a
+4455: cd 35 02     call $0235               ; Read a byte (500 baud) - LSB of block start
+4458: bb           cp   e
+4459: c2 a1 45     jp   nz,$45A1            ; "Continuity error" - non-contiguous program
+445c: 4f           ld   c,a
+445d: cd 35 02     call $0235               ; Read a byte (500 baud) - MSB of block start
+4460: ba           cp   d
+4461: c2 a1 45     jp   nz,$45A1            ; "Continuity error" - non-contiguous program
+4464: 81           add  a,c
+4465: 4f           ld   c,a
+
+4466: cd 35 02     call $0235               ; Read a byte (500 baud) - data inside block
+4469: 77           ld   (hl),a
+446a: 81           add  a,c                 ; c is the checksum
+446b: 4f           ld   c,a
+446c: 23           inc  hl
+446d: 3e fd        ld   a,$FD               ; if the buffer pointer hits $fd00, that's not acceptable
+446f: bc           cp   h
+4470: 20 06        jr   nz,$4478
+4472: 3e 00        ld   a,$00
+4474: bd           cp   l
+4475: ca aa 45     jp   z,$45AA             ; MEMORY BUFFER FULL error
+
+4478: 13           inc  de
+4479: 10 eb        djnz $4466               ; loop back for next byte in block
+447b: 18 b9        jr   $4436               ; loop back for next block
+
+;
+; get transfer address from tape file
+;
+447d: d9           exx
+447e: cd 35 02     call $0235               ; Read a byte (500 baud)
+4481: 6f           ld   l,a
+4482: cd 35 02     call $0235               ; Read a byte (500 baud)
+4485: 67           ld   h,a
+4486: b5           or   l
+4487: 20 03        jr   nz,$448C            ; if the transfer address is non-zero, go ahead and put it in the preloader
+4489: 21 b2 02     ld   hl,$02B2            ; otherwise, stick $02B2 in its place (DOS exit)
+448c: 22 27 43     ld   ($4327),hl          ; put transfer (execution) address in the loader
+448f: d9           exx
+4490: 11 6f 47     ld   de,$476F            ; Start of buffer address
+4493: b7           or   a
+4494: ed 52        sbc  hl,de               ; subtract start of buffer from current buffer address
+4496: 22 1e 43     ld   ($431E),hl          ; and place length of data into the loader
+
+4499: af           xor  a                   ; turn off cassette motor
+449a: d3 ff        out  ($FF),a
+
+449c: 21 61 46     ld   hl,$4661            ; pointer to "INSERT OBJECT TAPE AND PRESS ENTER" string
+449f: cd c4 45     call $45C4               ; print it
+44a2: 21 41 38     ld   hl,$3841            ; keyboard address
+44a5: cb 46        bit  0,(hl)              ; check for ENTER
+44a7: 28 fc        jr   z,$44A5             ; wait for it
+
+44a9: 2a 1b 43     ld   hl,($431B)          ; start of program (load address)
+44ac: 11 dc 43     ld   de,$43DC            ; end of low address loader
+44af: b7           or   a
+44b0: ed 52        sbc  hl,de
+44b2: 38 12        jr   c,$44C6             ; if there's a conflict, use the upper loader
+44b4: d9           exx
+44b5: 06 00        ld   b,$00
+44b7: d9           exx
+44b8: 21 b4 46     ld   hl,$46B4            ; pointer to "LOWER PRELOADER SELECTED" string
+44bb: cd c4 45     call $45C4               ; print it
+44be: 21 00 00     ld   hl,$0000
+44c1: 22 67 47     ld   ($4767),hl          ; loader offset
+44c4: 18 22        jr   $44E8
+
+44c6: d9           exx
+44c7: 06 01        ld   b,$01
+44c9: d9           exx
+44ca: 21 9a 46     ld   hl,$469A            ; pointer to "UPPER PRELOADER SELECTED" string
+44cd: cd c4 45     call $45C4               ; print it
+44d0: 21 00 ba     ld   hl,$BA00            ; offset amount between lower loader and upper loader addresses
+44d3: 22 67 47     ld   ($4767),hl          ; loader offset (from base of $4300)
+44d6: 2a 1b 43     ld   hl,($431B)          ; Move start-of-block address from lower loader to upper loader
+44d9: 22 1b fd     ld   ($FD1B),hl
+44dc: 2a 1e 43     ld   hl,($431E)          ; Move size-of-block address from lower loader to upper loader
+44df: 22 1e fd     ld   ($FD1E),hl
+44e2: 2a 27 43     ld   hl,($4327)          ; Move execution address from lower loader to upper loader
+44e5: 22 27 fd     ld   ($FD27),hl
+
+;
+; set up to write tape file
+;
+44e8: 21 00 00     ld   hl,$0000
+44eb: 22 3a 43     ld   ($433A),hl          ; clear checksum value
+44ee: 21 14 04     ld   hl,$0414
+44f1: 22 3c 43     ld   ($433C),hl          ; reset marquee shift values
+
+44f4: cd 87 02     call $0287               ; write leader and sync byte (500 baud)
+44f7: 3e 55        ld   a,$55
+44f9: cd 64 02     call $0264               ; write $55 byte (machine language format) (500 baud)
+
+44fc: 06 06        ld   b,$06               ; write 6-byte name (500 baud)
+44fe: 21 69 47     ld   hl,$4769            ; name buffer
+4501: 7e           ld   a,(hl)
+4502: cd 64 02     call $0264               ; write byte (500 baud)
+4505: 23           inc  hl
+4506: 10 f9        djnz $4501
+
+4508: 3e 3c        ld   a,$3C               ; $3C block start
+450a: cd 64 02     call $0264               ; write byte (500 baud)
+
+450d: 3e 02        ld   a,$02               ; first block is a length of 2
+450f: cd 64 02     call $0264
+4512: 3e 1e        ld   a,$1E               ; load address is $401E
+4514: cd 64 02     call $0264               ; write byte (500 baud)
+4517: 3e 40        ld   a,$40
+4519: cd 64 02     call $0264               ; write byte (500 baud)
+451c: cd b3 45     call $45B3               ; calculate and write transfer (execution) address - upper or lower loader
+
+451f: d9           exx
+4520: cb 40        bit  0,b                 ; which loader is in use ?
+4522: 20 04        jr   nz,$4528
+4524: 3e a1        ld   a,$A1               ; checksum of $A1 for $4300 loader
+4526: 18 02        jr   $452A
+4528: 3e 5b        ld   a,$5B               ; checksum of $5B for $7D00 loader
+452a: cd 64 02     call $0264               ; write byte (500 baud)
+
+452d: d9           exx
+452e: 3e 3c        ld   a,$3C               ; $3C block start
+4530: cd 64 02     call $0264               ; write byte (500 baud)
+4533: 3e dc        ld   a,$DC               ; $DC is number of bytes to write
+4535: cd 64 02     call $0264               ; write byte (500 baud)
+4538: cd b3 45     call $45B3               ; calculate and write loader start address - upper or lower loader
+453b: 06 dc        ld   b,$DC               ; loop to write $DC bytes
+453d: 21 00 43     ld   hl,$4300            ; loader is at $4300
+4540: ed 5b 67 47  ld   de,($4767)          ; plus the offset - making it either $4300 or $FD00
+4544: 19           add  hl,de
+
+4545: 7e           ld   a,(hl)              ; get next byte
+4546: cd 64 02     call $0264               ; write byte (500 baud)
+4549: 23           inc  hl
+454a: 10 f9        djnz $4545               ; loop until loader block is written
+
+454c: d9           exx
+454d: cb 40        bit  0,b                 ; which loader is in use ?
+454f: 20 04        jr   nz,$4555
+4551: 3e ad        ld   a,$AD               ; starting checksum of $AD for $4300 loader
+4553: 18 02        jr   $4557
+4555: 3e 1f        ld   a,$1F               ; starting checksum of $1F for $FD00 loader
+4557: 2a 1b 43     ld   hl,($431B)          ; add the start addr to checksum
+455a: 84           add  a,h
+455b: 85           add  a,l
+455c: 2a 1e 43     ld   hl,($431E)          ; add the length to checksum
+455f: 84           add  a,h
+4560: 85           add  a,l
+4561: 2a 27 43     ld   hl,($4327)          ; add the execution addr to checksum
+4564: 84           add  a,h
+4565: 85           add  a,l
+4566: cd 64 02     call $0264               ; write byte (500 baud) - checksum for block
+4569: d9           exx
+
+456a: 3e 78        ld   a,$78               ; $78 is block type for target address
+456c: cd 64 02     call $0264               ; write byte (500 baud)
+456f: af           xor  a                   ; just put $0000 as the target address
+4570: cd 64 02     call $0264               ; write byte (500 baud)
+4573: cd 64 02     call $0264               ; write byte (500 baud)
+
+4576: 2e 19        ld   l,$19               ; put 25 bytes of $00 as lead-in
+4578: 0e 00        ld   c,$00               ; $00 is the byte to write
+457a: cd df 46     call $46DF               ; Write a byte (B-17)
+457d: 2d           dec  l
+457e: 20 f8        jr   nz,$4578
+
+4580: 0e 5a        ld   c,$5A               ; $5A is sync byte
+4582: cd df 46     call $46DF               ; Write a byte (B-17)
+4585: ed 5b 1e 43  ld   de,($431E)          ; length of data to write
+4589: 21 6f 47     ld   hl,$476F            ; buffer location
+458c: cd ce 46     call $46CE               ; write the program to tape in B-17 format
+
+458f: 21 85 46     ld   hl,$4685            ; pointer to "TAPE COPY COMPLETED" string
+4592: cd c4 45     call $45C4               ; print it
+4595: c3 e2 43     jp   $43E2               ; back to beginning to try another tape
+
+4598: 21 21 46     ld   hl,$4621            ; pointer to "SOURCE TAPE FORMATTING ERROR"
+459b: cd c4 45     call $45C4               ; print it
+459e: c3 e2 43     jp   $43E2               ; back to beginning to try another tape
+
+45a1: 21 3b 46     ld   hl,$463B            ; pointer to "CONTINUITY ERROR"
+45a4: cd c4 45     call $45C4               ; print it
+45a7: c3 e2 43     jp   $43E2               ; back to beginning to try another tape
+
+45aa: 21 4d 46     ld   hl,$464D            ; pointer to "MEMORY BUFFER FULL"
+45ad: cd c4 45     call $45C4               ; print it
+45b0: c3 e2 43     jp   $43E2               ; back to beginning to try another tape
+
+45b3: 3e 00        ld   a,$00
+45b5: 21 67 47     ld   hl,$4767            ; offset from base address (choose upper or lower loader address for execution)
+45b8: 86           add  a,(hl)
+45b9: cd 64 02     call $0264               ; write byte (500 baud)
+45bc: 3e 43        ld   a,$43
+45be: 23           inc  hl
+45bf: 86           add  a,(hl)
+45c0: cd 64 02     call $0264               ; write byte (500 baud)
+45c3: c9           ret
+
+;
+; Print Function - print a zero-terminated string
+;
+45c4: 7e           ld   a,(hl)              ; print string, terminated by zero
+45c5: b7           or   a
+45c6: c8           ret  z
+45c7: cd 33 00     call $0033
+45ca: 23           inc  hl
+45cb: 18 f7        jr   $45C4
+
+45cd:              db   '----B17 SYSTEM MODULE----  VERSION 3 (48K)'
+      1c 1f 2d 2d 2d 2d 42 31 37 20 53 59 53 54 45 4d
+45dd: 20 4d 4f 44 55 4c 45 2d 2d 2d 2d 20 20 56 45 52
+45ed: 53 49 4f 4e 20 33 20 28 34 38 4b 29
+45f9: 0d           db   $0d
+45fa: 1a           db   $1a
+45fb: 1a           db   $1f
+45fc: 00           db   $00
+
+
+45fd:              db   'INSERT SOURCE TAPE AND PRESS ENTER'
+      49 4e 53 45 52 54 20 53 4f 55 52 43 45 20 54 41
+460d: 50 45 20 41 4e 44 20 50 52 45 53 53 20 45 4e 54
+461d: 45 52
+461f: 0d           db   $0d
+4620: 00           db   $00
+
+4621:              db   'SOURCE TAPE FORMAT ERROR'
+      53 4f 55 52 43 45 20 54 41 50 45 20 46 4f 52 4d
+4631: 41 54 20 45 52 52 4f 52
+4639: 0d           db   $0d
+463a: 00           db   $00
+
+463b:               db   'CONTINUITY ERROR'
+      43 4f 4e 54 49 4e 55 49 54 59 20 45 52 52 4f 52
+464b: 0d           db   $0d
+464c: 00           db   $00
+
+464d:              db   'MEMORY BUFFER FULL'
+      4d 45 4d 4f 52 59 20 42 55 46 46 45 52 20 46 55
+465d: 4c 4c
+465f: 0d           db   $0d
+4660: 00           db   $00
+
+4661:               db   'INSERT OBJECT TAPE AND PRESS ENTER'
+      49 4e 53 45 52 54 20 4f 42 4a 45 43 54 20 54 41
+4671: 50 45 20 41 4e 44 20 50 52 45 53 53 20 45 4e 54
+4681: 45 52
+4683: 0d           db   $0d
+4684: 00           db   $00
+
+4685:               db   'TAPE COPY COMPLETED'
+      54 41 50 45 20 43 4f 50 59 20 43 4f 4d 50 4c 45
+4695: 54 45 44
+4698: 0d           db   $0d
+4699: 00           db   $00
+
+469a:               db   'UPPER PRELOADER SELECTED'
+      55 50 50 45 52 20 50 52 45 4c 4f 41 44 45 52 20
+46aa: 53 45 4c 45 43 54 45 44
+46b2: 0d           db   $0d
+46b3: 00           db   $00
+
+46b4:               db   'LOWER PRELOADER SELECTED'
+      4c 4f 57 45 52 20 50 52 45 4c 4f 41 44 45 52 20
+46c4: 53 45 4c 45 43 54 45 44
+46cc: 0d           db   $0d
+46cd: 00           db   $00
+
+; Write a block of data to cassette
+;
+;  Expectations: 500-baud header already written, 1700 baud leader already written
+;
+; HL = starting point
+; DE = size of block
+;
+46ce: 4e           ld   c,(hl)          ; get a byte
+46cf: cd df 46     call $46DF           ; write the byte to cassette in B-17
+46d2: cd 1b 47     call $471B           ; show the moving data marquee
+46d5: cd 52 47     call $4752           ; calculate checksum
+46d8: 23           inc  hl              ; next byte pointer inc
+46d9: 1b           dec  de              ; decrement the counter
+46da: 7a           ld   a,d
+46db: b3           or   e
+46dc: 20 f0        jr   nz,$46CE        ; repeat as necessary
+46de: c9           ret
+
+;
+; Write a byte - byte comes in 'C' register
+;
+; write 9 bite - a '1' start bit, with an 8-bit pulse train (present = '1'; absent = '0')
+; following it, with precise timing
+;
+; ** NOTE ** - the timings within this section are different than in the 16K version !!
+;   Also, a pulse starts with $06 then $05 then $04, as opposed to 16K's $05 then $06 then $04
+;   And this subroutine takes one more byte than the 16K version
+;
+46df: f5           push af
+46e0: c5           push bc
+46e1: d5           push de
+46e2: 16 09        ld   d,$09           ; 9 bits
+46e4: 37           scf                  ; set carry flag - start bit is always '1'
+
+; no pulse - delay instead
+;
+46e5: 38 08        jr   c,$46EF         ; if bit not set, then don't output a pulse (just delay instead)
+46e7: 06 17        ld   b,$17
+46e9: 10 fe        djnz $46E9
+46eb: 00           nop
+46ec: 00           nop
+46ed: 18 14        jr   $4703
+
+; output a pulse
+;
+46ef: 3e 06        ld   a,$06           ; motor on, pulse low
+46f1: d3 ff        out  ($FF),a         ; send to cassette
+46f3: 00           nop                  ; delay
+46f4: 00           nop
+46f5: 06 0a        ld   b,$0A
+46f7: 10 fe        djnz $46F7
+46f9: 3e 05        ld   a,$05           ; motor on, pulse high
+46fb: d3 ff        out  ($FF),a         ; send to cassette
+46fd: 00           nop                  ; delay
+46fe: 00           nop
+46ff: 06 0a        ld   b,$0A
+4701: 10 fe        djnz $4701
+
+4703: 3e 04        ld   a,$04           ; motor on, no pulse (neutral)
+4705: d3 ff        out  ($FF),a         ; send to cassette
+
+; circle back for next bit
+;
+4707: 00           nop                  ; delay
+4708: f6 00        or   $00
+470a: 06 07        ld   b,$07
+470c: 10 fe        djnz $470C
+470e: cb 19        rr   c               ; check next bit
+4710: 15           dec  d               ; decrement bit counter
+4711: 20 d2        jr   nz,$46E5        ; loop for next bit
+4713: 06 02        ld   b,$02           ; small delay at end of byte
+4715: 10 fe        djnz $4715
+4717: d1           pop  de
+4718: c1           pop  bc
+4719: f1           pop  af
+471a: c9           ret
+
+;
+; While writing, rotate a marquee in the top right corner
+;
+471b: f5           push af
+471c: c5           push bc
+471d: d5           push de
+471e: e5           push hl
+471f: 3e 49        ld   a,$49           ; 'I'
+4721: 32 33 3c     ld   ($3C33),a
+4724: 3e 4f        ld   a,$4F           ; 'O'
+4726: 32 3f 3c     ld   ($3C3F),a
+4729: 21 3c 43     ld   hl,$433C        ; decrement the once-in-20 counter
+472c: 35           dec  (hl)
+472d: 20 1e        jr   nz,$474D        ; not zero ?  OK, we're done here
+472f: 36 14        ld   (hl),$14        ; reload the counter
+4731: 01 0a 00     ld   bc,$000A        ; shift the marquee to the right (10 characters)
+4734: 11 3e 3c     ld   de,$3C3E
+4737: 21 3d 3c     ld   hl,$3C3D
+473a: ed b8        lddr
+473c: 21 3d 43     ld   hl,$433D        ; decrement to once-in-4 counter
+473f: 35           dec  (hl)
+4740: 20 06        jr   nz,$4748        ; not zero ?  OK, put a '-' in the marquee
+4742: 36 04        ld   (hl),$04        ; else, reload the counter
+4744: 3e 3e        ld   a,$3E           ; put a '>' in the marquee
+4746: 18 02        jr   $474A
+4748: 3e 2d        ld   a,$2D           ; '-'
+474a: 32 34 3c     ld   ($3C34),a       ; put a '-' three times out of 4, or '>' once
+474d: e1           pop  hl
+474e: d1           pop  de
+474f: c1           pop  bc
+4750: f1           pop  af
+4751: c9           ret
+
+;
+; calculate the checksum
+;
+4752: f5           push af
+4753: c5           push bc
+4754: e5           push hl
+4755: 21 3b 43     ld   hl,$433B        ; $433B is the running checksum
+4758: 79           ld   a,c
+4759: 86           add  a,(hl)
+475a: 77           ld   (hl),a
+475b: 2b           dec  hl
+475c: 35           dec  (hl)            ; $433A counts down bytes in a block
+475d: 20 04        jr   nz,$4763        ; not time to check checksum yet
+475f: 4f           ld   c,a
+4760: cd df 46     call $46DF           ; write checksum byte
+4763: e1           pop  hl
+4764: c1           pop  bc
+4765: f1           pop  af
+4766: c9           ret
+
+; loader offset from $4300 (i.e. $0000 or $BA00)
+;
+4767:              db   $00
+4768:              db   $00
+
+; Filename buffer (6 chars)
+;
+4769:              db   $00
+476a:              db   $00
+476b:              db   $00
+476c:              db   $00
+476d:              db   $00
+476e:              db   $00
+
+; start of load buffer:
+;
+476f:              db   $00
+
+;
+; Second block is as follows:
+;
+; FD00 - FDDB: Preloader block (as described in the Preloader disassembly, but relocated to FD00)
+;

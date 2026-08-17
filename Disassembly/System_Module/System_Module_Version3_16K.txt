@@ -14,17 +14,17 @@
 ;
 
 ; Entry address:
-;-------------
+;---------------
 43eb: 21 dc 45     ld   hl,$45DC        ; pointer to "B17 System Module" title string
 43ee: cd d3 45     call $45D3           ; print it
 
 43f1: af           xor  a
-43f2: d3 ff        out  ($FF),a
+43f2: d3 ff        out  ($FF),a         ; turn off motor
 43f4: 21 0c 46     ld   hl,$460C        ; pointer to "INSERT SOURCE TAPE AND PRESS ENTER" string
 43f7: cd d3 45     call $45D3           ; print it
 43fa: 21 41 38     ld   hl,$3841        ; keyboard address
 43fd: cb 46        bit  0,(hl)          ; watch for keypress
-43ff: 28 fc        jr   z,$43FD         ; lopp until ENTER or @
+43ff: 28 fc        jr   z,$43FD         ; loop until ENTER or @
 
 4401: 3e 00        ld   a,$00
 4403: cd 12 02     call $0212           ; select cassette unit
@@ -65,7 +65,7 @@
 ; get additional blocks from cassette (500 baud)
 ;
 4445: cd 35 02     call $0235           ; Read a byte (500 baud) - checksum
-4448: b9           cp   c               ; checksum - if issue...
+4448: b9           cp   c               ; checksum - if issue, then...
 4449: c2 c9 43     jp   nz,$43C9        ; jump to the "CHECKSUM ERROR" print function in the loader
 
 444c: 3a 3e 3c     ld   a,($3C3E)       ; flash the asterisk during load
@@ -121,7 +121,7 @@
 449f: 11 7d 47     ld   de,$477D        ; Start of buffer address
 44a2: b7           or   a
 44a3: ed 52        sbc  hl,de           ; subtract start of buffer from current buffer address
-44a5: 22 1e 43     ld   ($431E),hl      ; and place length of data into the loadar
+44a5: 22 1e 43     ld   ($431E),hl      ; and place length of data into the loader
 
 44a8: af           xor  a               ; turn off cassette motor
 44a9: d3 ff        out  ($FF),a
@@ -179,7 +179,7 @@
 4514: 23           inc  hl
 4515: 10 f9        djnz $4510
 
-4517: 3e 3c        ld   a,$3C           ; write $3C block start (500 baud)
+4517: 3e 3c        ld   a,$3C           ; $3C block start
 4519: cd 64 02     call $0264           ; write byte (500 baud)
 
 451c: 3e 02        ld   a,$02           ; first block is a length of 2
@@ -312,8 +312,8 @@
 
 464a:              db   'CONTINUITY ERROR'
       43 4f 4e 54 49 4e 55 49 54 59 20 45 52 52 4f 52
-465a: 0d           dec  c
-465b: 00           nop
+465a: 0d           db   $0d
+465b: 00           db   $00
 
 465c:              db   'MEMORY BUFFER FULL'
       4d 45 4d 4f 52 59 20 42 55 46 46 45 52 20 46 55
@@ -394,7 +394,7 @@
 4703: 2b           dec  hl
 4704: 06 0f        ld   b,$0F
 4706: 10 fe        djnz $4706
-4708: 3e 06        ld   a,$06
+4708: 3e 06        ld   a,$06           ; motor on, pulse low
 470a: d3 ff        out  ($FF),a         ; send to cassette
 470c: 23           inc  hl              ; delay
 470d: 2b           dec  hl
@@ -476,7 +476,9 @@
 4775:              db   $00
 4776:              db   $00
 
-4777:              db   $00             ; Filename buffer (6 chars)
+; Filename buffer (6 chars)
+;
+4777:              db   $00
 4778:              db   $00
 4779:              db   $00
 477a:              db   $00

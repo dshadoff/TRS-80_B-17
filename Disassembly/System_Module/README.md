@@ -22,16 +22,20 @@ save the program to, and it saves the program to tape at B-17 speeds, including 
 pre-loader at 500 baud which automatically transitions to B-17 speed loading.
 
 There were minor differences between the version supplied on the original cassette intended for
-16B systems, and the "version 3" cassette intended for 48KB systems, but these haven't yet been 
-ully explored.
+16B systems, and the "version 3" cassette intended for 48KB systems, and these are also included
+in this folder.
 
 
 ## Preparation
 
 I took the data from the CAS file, and amended it to remove the block markers, converting this data into
-two binary files [HERE - the 4300 block](System_Module_Version3_16K_4300.bin), and
-[HERE - the 7D00 block](System_Module_Version3_16K_7D00.bin). I then used MAME's "unidasm" program to
+two binary files [HERE - the 4300 block of the 16K version](System_Module_Version3_16K_4300.bin), and
+[HERE - the 7D00 block of the 16K version](System_Module_Version3_16K_7D00.bin). I then used MAME's "unidasm" program to
 disassemble the contents.
+
+The versions from the 48K cassettte were also extracted:
+[HERE - the 4300 block of the 48K version](System_Module_Version3_48K_4300.bin), and
+[HERE - the FD00 block of the 48K version](System_Module_Version3_48K_FD00.bin).
 
 
 ## High-Level Analysis
@@ -46,4 +50,9 @@ For both the "read" and "write" phase, ROM calls are used for the 500-baud tape 
 For the B-17 write phase, it is a custom implementation with precision-timed loops for
 timimng.
 
-[The full, commented disassembly is here](System_Module_Version3_16K.txt)
+[The full, commented disassembly of the 16K version is here](System_Module_Version3_16K.txt)
+
+[The full, commented disassembly of the 48K version is here](System_Module_Version3_48K.txt)
+
+They are almost the same, except for some efficiencies in the 48K version which allow for a 15-byte
+smaller loader (and related constants and addresses).  These are called out in the 48K disassembly.
