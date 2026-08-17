@@ -2,6 +2,30 @@
 ; B-17 Loader
 ; -----------
 ;
+; Notes:
+; 1) The only locations which change based on the program being loaded are:
+;    $431b, $431c - Start of block
+;    $431e, $431f - Number of bytes to load
+;    $4327, $4328 - Entry address
+;
+; 2) Another version of this preloader is available which can be loaded at
+;    location $7D00.  It is byte-for-byte identical except for the absolute
+;    addressing bytes at the following locations:
+;    $430B,
+;    $4311,
+;    $4316,
+;    $4322,
+;    $432B,
+;    $432E,
+;    $4331,
+;    $438D,
+;    $43A0,
+;    $43B9,
+;    $43C3,
+;    $43CD
+;
+;-------------------------------------------------
+;
 ; First block of the pre-load header is:
 401E: 00 43
 ;
@@ -25,12 +49,12 @@
 4317: b9        cp   c
 4318: 20 fa     jr   nz,$4314       ; keep reading until you read $5A
 ;
-431a: 21 00 63  ld   hl,$6300       ; load program into 0x6300
-431d: 11 00 1d  ld   de,$1D00       ; length of program (0x6300 - 0x7fff)
+431a: 21 00 63  ld   hl,$6300       ; load program into 0x6300                      *** VARIES BY PROGRAM 
+431d: 11 00 1d  ld   de,$1D00       ; length of program (0x6300 - 0x7fff)           *** VARIES BY PROGRAM
 4320: cd 29 43  call $4329          ; load the whole program
 4323: af        xor  a
 4324: d3 ff     out  ($FF),a        ; turn off motor
-4326: c3 00 63  jp   $6300          ; entry point of the program (PATROL) = 0x6300
+4326: c3 00 63  jp   $6300          ; entry point of the program (PATROL) = 0x6300  *** VARIES BY PROGRAM
 
 4329: cd 3e 43  call $433E          ; load byte (?)
 432c: cd 7d 43  call $437D          ; check to shift marquee
@@ -153,7 +177,7 @@
 43b3: c9        ret
 
 
-; check the checksum (?)
+; check the checksum
 ;
 43b4: f5        push af
 43b5: c5        push bc
